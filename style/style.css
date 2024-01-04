@@ -1,0 +1,68 @@
+body{
+    padding: 0px;
+    margin: 0px;
+    font-family: 'Times New Roman', Times, serif;
+    background-color: black;
+}
+p{
+    margin: auto;
+}
+.header{
+    background-color: dimgray;
+    margin: auto;
+    width: 80%;
+    margin-top: 1%;
+    border-radius: 15px;
+}
+.informations{
+    margin-left: 40%;
+}
+.info{
+    display: flex;
+}
+.info img{
+    border-radius: 100px;
+    margin: auto;
+    margin-left: 5px;
+    margin-right: 5px;
+    width: 50px;
+    height: 50px;
+}
+.welcome{
+    margin-left: 35%;
+    font-family: sans-serif
+}
+.all-post{
+    display: flex;
+    background-color: gray;
+    margin: auto;
+    margin-top: 1%;
+    width: 90%;
+    border-radius: 15px;
+}
+.game{
+    width: 90%;
+    margin-top: 10px;
+    border-radius: 15px;
+    padding: 0%;
+    margin-left: 5px;
+    margin-right: 5px;
+    background-color: red;
+}
+.game img{
+    border-radius: 10%;
+    margin: auto;
+    margin-left: 15%;
+    padding: 0%;
+    width: 70%;
+}
+.game h2{
+    font-family: sans-serif;
+}
+.game button{
+    margin: auto;
+    margin-left: 35%;
+    border-radius: 5px;
+    border-color: grey;
+    background-color: grey;
+}
