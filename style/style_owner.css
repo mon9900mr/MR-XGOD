@@ -1,0 +1,117 @@
+body{
+
+    padding: 0px;
+    margin: 0px;
+    font-family: 'Times New Roman', Times, serif;
+    background-color: rgb(41, 43, 40);
+    border: 25px solid blueviolet;
+    border-radius: 115px;
+}
+header{
+    background-color: black;
+    color: blueviolet;
+    margin: auto;
+    margin-top: 1%;
+    width: 90%;
+    border-radius: 15px;
+    font-family: sans-serif;
+    border: 5px solid blueviolet;
+}
+header h1{
+    margin: 1%;
+    margin-left: 45%;
+}
+#location{
+    margin: auto;
+    display: flex;
+    width: 5%;
+    border: 1px solid blueviolet;
+    border-radius: 15px;
+}
+.HOME{
+    border: 2px solid rgb(132, 0, 255);
+    background-color: blueviolet;
+    margin: auto;
+    border-radius: 15px;
+}
+
+section{
+    margin: auto;
+    margin-top: 1%;
+    background-color: black;
+    width: 90%;
+    border: 5px solid blueviolet;
+    border-radius: 15px;
+    color: blueviolet;
+    text-align: center;
+}
+.information{
+    background-color: black;
+    margin: auto;
+    border-radius: 15px;
+    width: 90%;
+}
+.information h3{
+    margin: auto;
+    margin-left: 45%;
+
+    color: purple;
+}
+.information p {
+    margin: auto;
+    text-align: center;
+    color: blueviolet;
+}
+.item2{
+    margin: auto;
+    margin-right: 40px;
+}
+
+
+.item{
+    margin: auto;
+    width: 50%;
+    display: flex;
+    text-align: center;
+}
+.item img{
+    width: 70px;
+    height: 70px;
+    border-radius: 50px;
+    border: 3px solid gold;
+}
+.item h4{
+    margin: auto;
+    padding: 2px;
+    text-align: center;
+}
+.support{
+    margin: auto;
+    width: 90%;
+}
+footer{
+    background-color: blueviolet;
+    margin: auto;
+    border-radius: 15px;
+    width: 90%;
+    font-family: sans-serif;
+    margin-top: 1%;
+}
+.information{
+    background-color: black;
+    border-radius: 15px;
+    width: 95%;
+    margin: auto;    
+    border: 5px solid blueviolet;
+}
+.information h3{
+    margin: auto;
+    margin-left: 45%;
+
+    color: purple;
+}
+.information p {
+    margin: auto;
+    text-align: center;
+    color: blueviolet;
+}

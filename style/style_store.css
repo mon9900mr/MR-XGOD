@@ -1,0 +1,116 @@
+body{
+    font-family: sans-serif;
+    padding: 0px;
+    margin: 0px;
+    font-family: 'Times New Roman', Times, serif;
+    background-color: rgb(41, 43, 40);
+    border: 25px solid blueviolet;
+    border-radius: 115px;
+}
+header{
+    background-color: black;
+    color: blueviolet;
+    margin: auto;
+    margin-top: 1%;
+    width: 90%;
+    border-radius: 15px;
+    font-family: sans-serif;
+    border: 5px solid blueviolet;
+}
+#location{
+    margin: auto;
+    display: flex;
+    width: 5%;
+    border: 1px solid blueviolet;
+    border-radius: 15px;
+}
+.HOME{
+    border: 2px solid rgb(132, 0, 255);
+    background-color: blueviolet;
+    margin: auto;
+    border-radius: 15px;
+}
+header h1{
+    margin: 1%;
+    margin-left: 45%;
+}
+.all_post{
+
+    margin: auto;
+    margin-top: 1%;
+    width: 90%;
+    border-radius: 15px;
+}
+.program_mobile{
+    display: flex;
+    margin: auto;
+    border-radius: 15px;
+    text-align: center;
+
+}
+.program{
+    width: 90%;
+    margin-top: 1%;
+    border-radius: 15px;
+    padding: 0%;
+    margin-left: 5px;
+    margin-right: 5px;
+    background-color: black;
+    border: 5px solid blueviolet;
+    color: blueviolet;
+    font-family: sans-serif;
+    display: grid;
+}
+.program video{
+    border-radius: 10%;
+    margin: auto;
+    margin-left: 15%;
+    padding: 0%;
+    width: 70%;
+    border: 2px solid rgb(179, 255, 0);
+}
+.program img{
+    border-radius: 10%;
+    margin: auto;
+    padding: 0%;
+    width: 70%;
+    height: 70%;
+    border: 2px solid rgb(179, 255, 0);
+}
+.program button{
+    margin: auto;
+    border-radius: 5px;
+    border-color: grey;
+    background-color: gray;
+    border: 2px solid rgb(71, 71, 71);
+}
+.all_program h3{
+    margin: auto;
+    margin-left: 30%;
+    font-family: sans-serif
+}
+footer{
+    margin: auto;
+    border-radius: 15px;
+    width: 90%;
+    font-family: sans-serif;
+    margin-top: 1%;
+}
+.information{
+    background-color: black;
+    border-radius: 15px;
+    width: 95%;
+    margin: auto;    
+    border: 5px solid blueviolet;
+}
+.information h3{
+    margin: auto;
+    margin-left: 45%;
+
+    color: purple;
+}
+.information p {
+    margin: auto;
+    text-align: center;
+    color: blueviolet;
+}

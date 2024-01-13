@@ -1,0 +1,143 @@
+body{
+
+    padding: 0px;
+    margin: 0px;
+    font-family: 'Times New Roman', Times, serif;
+    background-color: rgb(41, 43, 40);
+    border: 25px solid blueviolet;
+    border-radius: 115px;
+}
+p{
+    margin: auto;
+}
+header{
+    background-color: black;
+    margin: auto;
+    width: 90%;
+    margin-top: 1%;
+    border-radius: 15px;
+    border: 5px solid blueviolet;
+}
+#location{
+    margin: auto;
+    display: flex;
+    width: 90%;
+    
+    border: 5px solid blueviolet;
+    border-radius: 15px;
+    
+}
+.location{
+    border: 2px solid rgb(132, 0, 255);
+    background-color: blueviolet;
+    margin: auto;
+    border-radius: 15px;
+}
+.welcome{
+    color: blueviolet;
+    margin-left: 35%;
+    font-family: sans-serif
+
+}
+.all-post{
+    display: flex;
+    
+    margin: auto;
+    margin-top: 1%;
+    width: 90%;
+    border-radius: 15px;
+}
+.all-post h3{
+    margin: auto;
+    margin-left: 30%;
+    font-family: sans-serif
+}
+.game{
+    width: 90%;
+    margin-top: 10px;
+    border-radius: 15px;
+    padding: 0%;
+    margin-left: 5px;
+    margin-right: 5px;
+    background-color: black;
+    border: 5px solid blueviolet;
+    color: blueviolet;
+}
+.game video{
+    border-radius: 10%;
+    margin: auto;
+    margin-left: 15%;
+    padding: 0%;
+    width: 70%;
+    border: 2px solid rgb(179, 255, 0);
+}
+.game img{
+    border-radius: 10%;
+    margin: auto;
+    margin-left: 15%;
+    padding: 0%;
+    width: 70%;
+    border: 2px solid rgb(179, 255, 0);
+}
+.game h2{
+    color: blueviolet;
+    font-family: sans-serif;
+}
+.game button{
+    margin: auto;
+    margin-left: 35%;
+    border-radius: 5px;
+    border-color: grey;
+    background-color: gray;
+    border: 2px solid rgb(71, 71, 71);
+}
+.item{
+    margin: auto;
+    width: 50%;
+    display: flex;
+    text-align: center;
+}
+.item img{
+    width: 70px;
+    height: 70px;
+    border-radius: 50px;
+    border: 3px solid gold;
+}
+.item h4{
+    margin: auto;
+    padding: 2px;
+    text-align: center;
+}
+.support{
+    margin: auto;
+    width: 90%;
+}
+footer{
+    border: 5px solid blueviolet;
+    margin: auto;
+    border-radius: 15px;
+    width: 90%;
+    font-family: sans-serif;
+    margin-top: 1%;
+}
+.information{
+    background-color: black;
+    margin: auto;
+    border-radius: 15px;
+}
+.information h3{
+    margin: auto;
+    margin-left: 45%;
+
+    color: purple;
+}
+.information p {
+    margin: auto;
+    text-align: center;
+    color: blueviolet;
+}
+.item2{
+    /*margin: auto;*/
+    margin-left: auto;
+    margin-right: 40px;
+}
