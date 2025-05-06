@@ -29,8 +29,8 @@ button{
     border-radius: 5px;
 }
 .user{
-    height: 40%;
-    width: 30%;
+    height: 50%;
+    width: 50%;
     place-items: center;
     justify-items: center;
     align-items: center;
