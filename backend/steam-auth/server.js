@@ -10,9 +10,9 @@ import SteamStrategy from "@dessly/passport-steam";
 const {Pool}=pg, app=express(), PORT=Number(process.env.PORT||10000);
 const FRONTEND_URL=(process.env.FRONTEND_URL||"https://mon9900mr.github.io").replace(/\/$/,"");
 const FRONTEND_REDIRECT_URL=(process.env.FRONTEND_REDIRECT_URL||"https://mon9900mr.github.io/MR-XGOD/").replace(/\/$/,"");
-const PUBLIC_API_URL=(process.env.API_PUBLIC_URL||process.env.RENDER_EXTERNAL_URL||"").replace(/\/$/,"");
+const PUBLIC_API_URL=(process.env.API_PUBLIC_URL||process.env.RENDER_EXTERNAL_URL||(process.env.VERCEL_URL?`https://${process.env.VERCEL_URL}`:"")).replace(/\/$/,"");
 const JWT_SECRET=process.env.JWT_SECRET||"", DATABASE_URL=process.env.DATABASE_URL||"", ADMIN_STEAM_ID=String(process.env.ADMIN_STEAM_ID||"").trim();
-if(!DATABASE_URL||JWT_SECRET.length<32){console.error("Set DATABASE_URL and JWT_SECRET (32+ chars) in Render.");process.exit(1)}
+if(!DATABASE_URL||JWT_SECRET.length<32){console.error("Set DATABASE_URL and JWT_SECRET (32+ chars) in the hosting environment.");process.exit(1)}
 if(ADMIN_STEAM_ID&&!/^\d{17}$/.test(ADMIN_STEAM_ID)){console.error("ADMIN_STEAM_ID must be an exact 17-digit SteamID64.");process.exit(1)}
 const pool=new Pool({connectionString:DATABASE_URL,ssl:process.env.DATABASE_SSL==="false"?false:{rejectUnauthorized:false},max:5});
 app.set("trust proxy",1);app.use(helmet({contentSecurityPolicy:false}));app.use(express.json({limit:"32kb"}));
