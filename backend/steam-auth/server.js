@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 import pg from "pg";
 import crypto from "node:crypto";
 const {Pool}=pg, app=express(), PORT=Number(process.env.PORT||10000);
-const FRONTEND_URL=(process.env.FRONTEND_URL||"https://mon9900mr.github.io/MR-XGOD").replace(/\/$/,"");
+const FRONTEND_URL=(process.env.FRONTEND_URL||"https://mon9900mr.github.io").replace(/\/$/,"");
 const JWT_SECRET=process.env.JWT_SECRET||"", DATABASE_URL=process.env.DATABASE_URL||"", ADMIN_USERNAME=process.env.ADMIN_USERNAME||"MASTERXGOD", ADMIN_PASSWORD=process.env.ADMIN_PASSWORD||"";
 if(!DATABASE_URL||JWT_SECRET.length<32||ADMIN_PASSWORD.length<14){console.error("Set DATABASE_URL, JWT_SECRET (32+ chars), ADMIN_PASSWORD (14+ chars) in Render.");process.exit(1)}
 const pool=new Pool({connectionString:DATABASE_URL,ssl:process.env.DATABASE_SSL==="false"?false:{rejectUnauthorized:false},max:5});
