@@ -11,7 +11,7 @@ services:
       - key: NODE_VERSION
         value: 20
       - key: FRONTEND_URL
-        value: https://mon9900mr.github.io/MR-XGOD
+        value: https://mon9900mr.github.io
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
