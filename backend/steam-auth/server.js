@@ -19,7 +19,7 @@ const pool=new Pool({connectionString:DATABASE_URL,ssl:process.env.DATABASE_SSL=
 app.set("trust proxy",1);app.use(helmet({contentSecurityPolicy:false}));app.use(express.json({limit:"32kb"}));
 app.use(session({name:"mxg.sid",secret:JWT_SECRET,resave:false,saveUninitialized:false,cookie:{httpOnly:true,secure:true,sameSite:"lax",maxAge:10*60*1000}}));
 passport.serializeUser((user,done)=>done(null,user));passport.deserializeUser((user,done)=>done(null,user));
-passport.use("steam",new SteamStrategy({returnUrl:PUBLIC_API_URL?PUBLIC_API_URL+"/auth/steam/return":"https://invalid.example/auth/steam/return",realm:PUBLIC_API_URL?PUBLIC_API_URL+"/":"https://invalid.example/",fetchUserProfile:false},(steamIdentity,done)=>{try{const raw=steamIdentity?.SteamID||steamIdentity;const steamId=String(raw?.getSteamID64?.()??raw?.getSteamId64?.()??raw?.toString?.()??raw);if(!/^\\d{17}$/.test(steamId))return done(new Error("Steam did not return a valid SteamID64"));done(null,{steamId})}catch(e){done(e)}}));
+passport.use("steam",new SteamStrategy({returnUrl:PUBLIC_API_URL?PUBLIC_API_URL+"/auth/steam/return":"https://invalid.example/auth/steam/return",realm:PUBLIC_API_URL?PUBLIC_API_URL+"/":"https://invalid.example/",fetchUserProfile:false},(steamIdentity,done)=>{try{const raw=steamIdentity?.SteamID||steamIdentity;const steamId=String(raw?.getSteamID64?.()??raw?.getSteamId64?.()??raw?.toString?.()??raw);if(!/^\d{17}$/.test(steamId))return done(new Error("Steam did not return a valid SteamID64"));done(null,{steamId})}catch(e){done(e)}}));
 app.use(passport.initialize());app.use(passport.session());
 app.use(rateLimit({windowMs:60000,limit:100,standardHeaders:true,legacyHeaders:false}));
 app.use((req,res,next)=>{const o=req.headers.origin;if(o===FRONTEND_URL||o===FRONTEND_URL+"/"||!o){res.setHeader("Access-Control-Allow-Origin",o||FRONTEND_URL);res.setHeader("Vary","Origin")}res.setHeader("Access-Control-Allow-Headers","Content-Type, Authorization");res.setHeader("Access-Control-Allow-Methods","GET,POST,PATCH,DELETE,OPTIONS");if(req.method==="OPTIONS")return res.sendStatus(204);next()});
@@ -40,7 +40,7 @@ function admin(req,res,next){if(req.auth?.role!=="admin")return res.status(403).
 
 app.get("/auth/steam",(req,res,next)=>{if(!PUBLIC_API_URL)return res.status(503).send("Steam login is not configured: public backend URL is missing.");next()},passport.authenticate("steam"));
 app.get("/auth/steam/return",passport.authenticate("steam",{failureRedirect:FRONTEND_REDIRECT_URL+"#steam_error=1"}),async(req,res)=>{try{
- const steamId=String(req.user?.steamId||"");if(!/^\\d{17}$/.test(steamId))throw new Error("Invalid Steam identity");
+ const steamId=String(req.user?.steamId||"");if(!/^\d{17}$/.test(steamId))throw new Error("Invalid Steam identity");
  const username="steam_"+steamId;
  const email="steam-"+steamId+"@steam.masterxgod.invalid";
  const displayName="Steam Player "+steamId.slice(-6);
@@ -56,7 +56,6 @@ app.get("/auth/steam/return",passport.authenticate("steam",{failureRedirect:FRON
  if(u.role==="banned"){await log(req,{userId:u.id,username:u.username,eventType:"steam_login_blocked",details:{steamId}});return res.redirect(FRONTEND_REDIRECT_URL+"#steam_banned=1")}
  await log(req,{userId:u.id,username:u.username,eventType:"steam_login",details:{steamId}});
  const signed=token(u);
- req.logout?.(()=>{});
  req.session.destroy(()=>res.redirect(FRONTEND_REDIRECT_URL+"#steam_token="+encodeURIComponent(signed)));
  }catch(e){console.error("Steam login failed:",e.message);res.redirect(FRONTEND_REDIRECT_URL+"#steam_error=1")}});
 
