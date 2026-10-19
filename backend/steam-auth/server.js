@@ -5,15 +5,28 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import pg from "pg";
 import crypto from "node:crypto";
+import session from "express-session";
+import passport from "passport";
+import SteamStrategy from "@dessly/passport-steam";
 const {Pool}=pg, app=express(), PORT=Number(process.env.PORT||10000);
 const FRONTEND_URL=(process.env.FRONTEND_URL||"https://mon9900mr.github.io").replace(/\/$/,"");
+const FRONTEND_REDIRECT_URL=(process.env.FRONTEND_REDIRECT_URL||"https://mon9900mr.github.io/MR-XGOD/").replace(/\/$/,"");
+const PUBLIC_API_URL=(process.env.API_PUBLIC_URL||process.env.RENDER_EXTERNAL_URL||"").replace(/\/$/,"");
+const ADMIN_STEAM_ID=String(process.env.ADMIN_STEAM_ID||"").trim();
 const JWT_SECRET=process.env.JWT_SECRET||"", DATABASE_URL=process.env.DATABASE_URL||"", ADMIN_USERNAME=process.env.ADMIN_USERNAME||"MASTERXGOD", ADMIN_PASSWORD=process.env.ADMIN_PASSWORD||"";
 if(!DATABASE_URL||JWT_SECRET.length<32||ADMIN_PASSWORD.length<14){console.error("Set DATABASE_URL, JWT_SECRET (32+ chars), ADMIN_PASSWORD (14+ chars) in Render.");process.exit(1)}
 const pool=new Pool({connectionString:DATABASE_URL,ssl:process.env.DATABASE_SSL==="false"?false:{rejectUnauthorized:false},max:5});
-app.set("trust proxy",1);app.use(helmet({contentSecurityPolicy:false}));app.use(express.json({limit:"32kb"}));app.use(rateLimit({windowMs:60000,limit:100,standardHeaders:true,legacyHeaders:false}));
+app.set("trust proxy",1);app.use(helmet({contentSecurityPolicy:false}));app.use(express.json({limit:"32kb"}));
+app.use(session({name:"mxg.sid",secret:JWT_SECRET,resave:false,saveUninitialized:false,cookie:{httpOnly:true,secure:true,sameSite:"lax",maxAge:10*60*1000}}));
+passport.serializeUser((user,done)=>done(null,user));passport.deserializeUser((user,done)=>done(null,user));
+passport.use("steam",new SteamStrategy({returnUrl:PUBLIC_API_URL?PUBLIC_API_URL+"/auth/steam/return":"https://invalid.example/auth/steam/return",realm:PUBLIC_API_URL?PUBLIC_API_URL+"/":"https://invalid.example/",fetchUserProfile:false},(steamIdentity,done)=>{try{const raw=steamIdentity?.SteamID||steamIdentity;const steamId=String(raw?.getSteamID64?.()??raw?.getSteamId64?.()??raw?.toString?.()??raw);if(!/^\\d{17}$/.test(steamId))return done(new Error("Steam did not return a valid SteamID64"));done(null,{steamId})}catch(e){done(e)}}));
+app.use(passport.initialize());app.use(passport.session());
+app.use(rateLimit({windowMs:60000,limit:100,standardHeaders:true,legacyHeaders:false}));
 app.use((req,res,next)=>{const o=req.headers.origin;if(o===FRONTEND_URL||o===FRONTEND_URL+"/"||!o){res.setHeader("Access-Control-Allow-Origin",o||FRONTEND_URL);res.setHeader("Vary","Origin")}res.setHeader("Access-Control-Allow-Headers","Content-Type, Authorization");res.setHeader("Access-Control-Allow-Methods","GET,POST,PATCH,DELETE,OPTIONS");if(req.method==="OPTIONS")return res.sendStatus(204);next()});
 await pool.query("CREATE TABLE IF NOT EXISTS users(id BIGSERIAL PRIMARY KEY,username VARCHAR(24) UNIQUE NOT NULL,email VARCHAR(254) UNIQUE NOT NULL,password_hash TEXT NOT NULL,display_name VARCHAR(40) NOT NULL,bio VARCHAR(240) NOT NULL DEFAULT '',steam_profile_url TEXT NOT NULL DEFAULT '',role VARCHAR(16) NOT NULL DEFAULT 'user',created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),last_login_at TIMESTAMPTZ)");
 await pool.query("CREATE TABLE IF NOT EXISTS activity_logs(id BIGSERIAL PRIMARY KEY,user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,username VARCHAR(24) NOT NULL DEFAULT 'unknown',event_type VARCHAR(48) NOT NULL,ip_address VARCHAR(64) NOT NULL DEFAULT 'unknown',country_code VARCHAR(2) NOT NULL DEFAULT '',country_name VARCHAR(80) NOT NULL DEFAULT '',user_agent VARCHAR(300) NOT NULL DEFAULT '',details JSONB NOT NULL DEFAULT '{}'::jsonb,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
+await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS steam_id VARCHAR(20)");
+await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS users_steam_id_unique_idx ON users(steam_id) WHERE steam_id IS NOT NULL");
 await pool.query("CREATE INDEX IF NOT EXISTS activity_logs_created_idx ON activity_logs(created_at DESC)");
 await pool.query("CREATE INDEX IF NOT EXISTS activity_logs_user_idx ON activity_logs(user_id)");
 await pool.query("DELETE FROM activity_logs WHERE created_at<NOW()-INTERVAL '30 days'");
@@ -24,6 +37,29 @@ const pub=r=>({id:r.id,username:r.username,email:r.email,displayName:r.display_n
 const token=u=>jwt.sign({sub:String(u.id),username:u.username,role:u.role},JWT_SECRET,{expiresIn:"12h",issuer:"masterxgod-api",audience:"masterxgod-web"});
 function auth(req,res,next){const m=String(req.headers.authorization||"").match(/^Bearer\s+(.+)$/i);if(!m)return res.status(401).json({error:"برای ادامه وارد حساب شو."});try{req.auth=jwt.verify(m[1],JWT_SECRET,{issuer:"masterxgod-api",audience:"masterxgod-web"});next()}catch{return res.status(401).json({error:"نشست منقضی شده؛ دوباره وارد شو."})}}
 function admin(req,res,next){if(req.auth?.role!=="admin")return res.status(403).json({error:"دسترسی ادمین لازم است."});next()}
+
+app.get("/auth/steam",(req,res,next)=>{if(!PUBLIC_API_URL)return res.status(503).send("Steam login is not configured: public backend URL is missing.");next()},passport.authenticate("steam"));
+app.get("/auth/steam/return",passport.authenticate("steam",{failureRedirect:FRONTEND_REDIRECT_URL+"#steam_error=1"}),async(req,res)=>{try{
+ const steamId=String(req.user?.steamId||"");if(!/^\\d{17}$/.test(steamId))throw new Error("Invalid Steam identity");
+ const username="steam_"+steamId;
+ const email="steam-"+steamId+"@steam.masterxgod.invalid";
+ const displayName="Steam Player "+steamId.slice(-6);
+ const profileUrl="https://steamcommunity.com/profiles/"+steamId;
+ const role=ADMIN_STEAM_ID&&steamId===ADMIN_STEAM_ID?"admin":"user";
+ const existing=await pool.query("SELECT * FROM users WHERE steam_id=$1",[steamId]);
+ let u;
+ if(existing.rowCount){
+   const q=await pool.query("UPDATE users SET last_login_at=NOW(),role=CASE WHEN role='admin' OR $2='admin' THEN 'admin' ELSE role END,updated_at=NOW() WHERE steam_id=$1 RETURNING *",[steamId,role]);u=q.rows[0];
+ }else{
+   const q=await pool.query("INSERT INTO users(username,email,password_hash,display_name,steam_profile_url,steam_id,role,last_login_at) VALUES($1,$2,$3,$4,$5,$6,$7,NOW()) RETURNING *",[username,email,await bcrypt.hash(crypto.randomBytes(32).toString("hex"),12),displayName,profileUrl,steamId,role]);u=q.rows[0];
+ }
+ if(u.role==="banned"){await log(req,{userId:u.id,username:u.username,eventType:"steam_login_blocked",details:{steamId}});return res.redirect(FRONTEND_REDIRECT_URL+"#steam_banned=1")}
+ await log(req,{userId:u.id,username:u.username,eventType:"steam_login",details:{steamId}});
+ const signed=token(u);
+ req.logout?.(()=>{});
+ req.session.destroy(()=>res.redirect(FRONTEND_REDIRECT_URL+"#steam_token="+encodeURIComponent(signed)));
+ }catch(e){console.error("Steam login failed:",e.message);res.redirect(FRONTEND_REDIRECT_URL+"#steam_error=1")}});
+
 app.get("/health",async(_q,s)=>{try{await pool.query("SELECT 1");s.json({ok:true,service:"MASTERXGOD API",database:"connected"})}catch{s.status(503).json({ok:false,database:"unavailable"})}});
 app.post("/api/auth/register",async(req,res)=>{try{let{username,email,password,displayName}=req.body||{};username=String(username||"").trim();email=String(email||"").trim().toLowerCase();password=String(password||"");displayName=String(displayName||username).trim();if(!/^[A-Za-z0-9_]{3,24}$/.test(username))return res.status(400).json({error:"نام کاربری: ۳ تا ۲۴ حرف انگلیسی، عدد یا _."});if(username.toLowerCase()===ADMIN_USERNAME.toLowerCase()||email==="admin@masterxgod.invalid")return res.status(409).json({error:"این نام کاربری رزرو شده است."});if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)return res.status(400).json({error:"ایمیل معتبر وارد کن."});if(password.length<10||password.length>128)return res.status(400).json({error:"رمز عبور باید حداقل ۱۰ کاراکتر باشد."});if(displayName.length<2||displayName.length>40)return res.status(400).json({error:"نام نمایشی باید ۲ تا ۴۰ کاراکتر باشد."});const h=await bcrypt.hash(password,12),q=await pool.query("INSERT INTO users(username,email,password_hash,display_name) VALUES($1,$2,$3,$4) RETURNING *",[username,email,h,displayName]),u=q.rows[0];await log(req,{userId:u.id,username:u.username,eventType:"register"});res.status(201).json({token:token(u),user:pub(u)})}catch(e){if(e.code==="23505")return res.status(409).json({error:"این نام کاربری یا ایمیل قبلاً ثبت شده."});console.error(e.message);res.status(500).json({error:"ثبت‌نام انجام نشد."})}});
 app.post("/api/auth/login",async(req,res)=>{try{const username=String(req.body?.username||"").trim(),password=String(req.body?.password||"");const a=crypto.createHash("sha256").update(password).digest(),b=crypto.createHash("sha256").update(ADMIN_PASSWORD).digest();if(username.toLowerCase()===ADMIN_USERNAME.toLowerCase()&&crypto.timingSafeEqual(a,b)){const q=await pool.query("INSERT INTO users(username,email,password_hash,display_name,role) VALUES($1,$2,$3,$4,'admin') ON CONFLICT(username) DO UPDATE SET role='admin',display_name=EXCLUDED.display_name,updated_at=NOW() RETURNING *",[ADMIN_USERNAME,"admin@masterxgod.invalid",await bcrypt.hash(crypto.randomBytes(32).toString("hex"),12),"MASTERXGOD"]),u=q.rows[0];await pool.query("UPDATE users SET last_login_at=NOW() WHERE id=$1",[u.id]);await log(req,{userId:u.id,username:u.username,eventType:"admin_login"});return res.json({token:token({...u,role:"admin"}),user:{...pub(u),role:"admin"}})}const q=await pool.query("SELECT * FROM users WHERE LOWER(username)=LOWER($1)",[username]),u=q.rows[0];if(!u||u.role==="admin"||u.role==="banned"||!(await bcrypt.compare(password,u.password_hash))){await log(req,{username:username.slice(0,24)||"unknown",eventType:"login_failed"});return res.status(401).json({error:"نام کاربری یا رمز عبور اشتباه است."})}await pool.query("UPDATE users SET last_login_at=NOW() WHERE id=$1",[u.id]);await log(req,{userId:u.id,username:u.username,eventType:"login"});res.json({token:token(u),user:pub({...u,last_login_at:new Date().toISOString()})})}catch(e){console.error(e.message);res.status(500).json({error:"ورود انجام نشد."})}});
