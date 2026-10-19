@@ -1,22 +1,19 @@
-# MASTERXGOD Steam Login Backend
+# MASTERXGOD API v2
 
-This Node.js service uses Steam OpenID 2.0 to verify identity. It is designed to deploy on Render's free web-service plan from this GitHub repository. Render free services can sleep after inactivity and may take about a minute to wake; see https://render.com/docs/free.
+## Included
+- PostgreSQL-backed registration and login; passwords hashed with bcrypt.
+- Editable display name, bio and Steam profile URL.
+- Admin APIs for account totals, activity totals, distinct IP count, user list, role changes and activity logs.
+- Security logs include IP, user agent, event and timestamp. Country/flag appears only when the hosting proxy supplies a country code; unknown geography is shown as 🏳️, not guessed.
+- Logs older than 30 days are purged at startup; admin can request a purge.
 
-## Deploy with one click
+## Deploy
+1. Create a PostgreSQL database, e.g. https://neon.tech/
+2. Copy the SSL-enabled connection string to Render as DATABASE_URL.
+3. Deploy Blueprint: https://render.com/deploy?repo=https://github.com/mon9900mr/MR-XGOD
+4. In Render Environment set ADMIN_PASSWORD to a unique random password of at least 14 characters. Do not put it in GitHub. Admin username is MASTERXGOD.
+5. Confirm JWT_SECRET is generated. Test https://YOUR-SERVICE.onrender.com/health
+6. Set API_BASE in index.html to your actual Render origin and commit.
 
-1. Open https://render.com/deploy?repo=https://github.com/mon9900mr/MR-XGOD
-2. Sign in to Render and create a Blueprint from this repository.
-3. Review the service named `masterxgod-steam-auth`. The blueprint sets its root directory to `backend/steam-auth`, installs dependencies and starts Node.
-4. Wait for deployment. Render supplies `RENDER_EXTERNAL_URL`; the server uses that as its public HTTPS base URL.
-5. Open the service's Environment page, set `STEAM_API_KEY` to your Steam Web API key (create it at https://steamcommunity.com/dev/apikey), and confirm `SESSION_SECRET` and `TOKEN_SECRET` were generated. Never publish these values or put them in frontend code.
-6. Open `https://YOUR-SERVICE.onrender.com/health`. It should return JSON with `"ok":true`.
-7. Copy the public service origin, e.g. `https://masterxgod-steam-auth.onrender.com`. In `index.html`, set `AUTH_API_BASE` to that origin (no trailing slash), commit to `main`, and wait for GitHub Pages to redeploy.
-8. Test the Steam sign-in button. Steam's login page must be on `steamcommunity.com`; the website never asks for the Steam password.
-
-## Notes
-
-- Steam OpenID is validated server-side by Passport's Steam strategy. `STEAM_API_KEY` is required to retrieve the Steam profile name and avatar.
-- After callback, a short-lived signed token is returned in the URL fragment (not sent as an HTTP request path), then held in the browser session storage. It expires in 12 hours.
-- This starter does not store users in a database and does not include account editing, tickets, or admin permissions.
-- Render free instances sleep when idle and may take about a minute to wake up. This is suitable for testing/hobby use, not a production guarantee.
-- Never grant admin privileges to the first person who logs in. Add a verified SteamID64 allowlist in a separate server-side change if admin access is needed.
+## Privacy
+The service records IP addresses and user agents for security auditing, with a 30-day retention period. Tell users this in your privacy notice. Free hosts may sleep or throttle. A profile link is metadata, not authentication.
