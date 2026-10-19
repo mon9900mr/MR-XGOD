@@ -16,3 +16,5 @@ services:
         generateValue: true
       - key: TOKEN_SECRET
         generateValue: true
+      - key: STEAM_API_KEY
+        sync: false
