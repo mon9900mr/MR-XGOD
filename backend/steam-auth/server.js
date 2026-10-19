@@ -1,32 +1,33 @@
 import express from "express";
-import session from "express-session";
+import cookieSession from "cookie-session";
 import passport from "passport";
 import SteamStrategy from "passport-steam";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import jwt from "jsonwebtoken";
 
 const app = express();
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT = Number(process.env.PORT || 3000);
+const PORT = Number(process.env.PORT || 10000);
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://mon9900mr.github.io/MR-XGOD/";
-const BASE_URL = process.env.BASE_URL;
+const BASE_URL = (process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/$/, "");
+const SESSION_SECRET = process.env.SESSION_SECRET;
+const TOKEN_SECRET = process.env.TOKEN_SECRET || SESSION_SECRET;
 
-if (!BASE_URL || !process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
-  console.error("Set BASE_URL and a SESSION_SECRET of at least 32 characters before starting.");
+if (!BASE_URL || !SESSION_SECRET || SESSION_SECRET.length < 32 || !TOKEN_SECRET || TOKEN_SECRET.length < 32) {
+  console.error("Configure BASE_URL (or use Render's RENDER_EXTERNAL_URL), SESSION_SECRET and TOKEN_SECRET (32+ characters).");
   process.exit(1);
 }
 
 app.set("trust proxy", 1);
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(rateLimit({ windowMs: 60_000, limit: 60, standardHeaders: true, legacyHeaders: false }));
-app.use(session({
-  name: "mxg.sid",
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: { httpOnly: true, secure: true, sameSite: "lax", maxAge: 7 * 24 * 60 * 60 * 1000 }
+app.use(cookieSession({
+  name: "mxg.oauth",
+  keys: [SESSION_SECRET],
+  maxAge: 10 * 60 * 1000,
+  httpOnly: true,
+  secure: true,
+  sameSite: "lax"
 }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -35,10 +36,9 @@ passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
 
 passport.use(new SteamStrategy({
-  returnURL: `${BASE_URL.replace(/\/$/, "")}/auth/steam/return`,
-  realm: `${BASE_URL.replace(/\/$/, "")}/`,
-  apiKey: process.env.STEAM_API_KEY || undefined,
-  passReqToCallback: false
+  returnURL: `${BASE_URL}/auth/steam/return`,
+  realm: `${BASE_URL}/`,
+  apiKey: process.env.STEAM_API_KEY || undefined
 }, (identifier, profile, done) => {
   const steamId = String(profile.id || "");
   if (!/^\d{17}$/.test(steamId)) return done(new Error("Invalid SteamID64"));
@@ -53,23 +53,32 @@ app.get("/auth/steam", passport.authenticate("steam", { failureRedirect: `${FRON
 
 app.get("/auth/steam/return",
   passport.authenticate("steam", { failureRedirect: `${FRONTEND_URL}?login=failed` }),
-  (req, res) => res.redirect(FRONTEND_URL)
+  (req, res) => {
+    const user = req.user;
+    const token = jwt.sign({
+      sub: user.steamId,
+      username: user.username,
+      avatar: user.avatar
+    }, TOKEN_SECRET, { expiresIn: "12h", issuer: BASE_URL, audience: "masterxgod-web" });
+    req.session = null;
+    res.redirect(`${FRONTEND_URL.replace(/\/$/, "")}/#steam_token=${encodeURIComponent(token)}`);
+  }
 );
 
 app.get("/api/me", (req, res) => {
   res.set("Cache-Control", "no-store");
-  if (!req.isAuthenticated?.() || !req.user) return res.status(401).json({ authenticated: false });
-  return res.json({ authenticated: true, user: req.user });
-});
-
-app.post("/auth/logout", (req, res, next) => {
-  req.logout(err => {
-    if (err) return next(err);
-    req.session.destroy(() => {
-      res.clearCookie("mxg.sid", { httpOnly: true, secure: true, sameSite: "lax" });
-      res.status(204).end();
+  const header = req.get("authorization") || "";
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  if (!match) return res.status(401).json({ authenticated: false });
+  try {
+    const claims = jwt.verify(match[1], TOKEN_SECRET, { issuer: BASE_URL, audience: "masterxgod-web" });
+    return res.json({
+      authenticated: true,
+      user: { steamId: claims.sub, username: claims.username, avatar: claims.avatar }
     });
-  });
+  } catch {
+    return res.status(401).json({ authenticated: false });
+  }
 });
 
 app.get("/health", (_req, res) => res.json({ ok: true, service: "MASTERXGOD Steam auth" }));
@@ -78,4 +87,4 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: "Authentication failed. Please try again." });
 });
 
-app.listen(PORT, () => console.log(`MASTERXGOD auth backend listening on ${PORT}`));
+app.listen(PORT, "0.0.0.0", () => console.log(`MASTERXGOD Steam auth listening on port ${PORT}`));
