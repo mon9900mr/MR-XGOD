@@ -1,5 +1,23 @@
 {
-  "name":"masterxgod-platform-api","version":"2.0.0","private":true,"type":"module",
-  "scripts":{"start":"node server.js"},"engines":{"node":">=20"},
-  "dependencies":{"bcryptjs":"^2.4.3","express":"^4.21.2","express-rate-limit":"^7.5.0","helmet":"^8.0.0","jsonwebtoken":"^9.0.2","pg":"^8.13.1"}
+  "name": "masterxgod-platform-api",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.1",
+    "@dessly/passport-steam": "^3.0.24",
+    "express-session": "^1.18.1",
+    "passport": "^0.7.0"
+  }
 }
