@@ -17,7 +17,7 @@ await pool.query("CREATE TABLE IF NOT EXISTS activity_logs(id BIGSERIAL PRIMARY 
 await pool.query("CREATE INDEX IF NOT EXISTS activity_logs_created_idx ON activity_logs(created_at DESC)");
 await pool.query("CREATE INDEX IF NOT EXISTS activity_logs_user_idx ON activity_logs(user_id)");
 await pool.query("DELETE FROM activity_logs WHERE created_at<NOW()-INTERVAL '30 days'");
-function ip(req){let x=String(req.headers["x-forwarded-for"]||req.headers["x-real-ip"]||req.socket.remoteAddress||"unknown").split(",")[0].trim();return (x.startsWith("::ffff:")?x.slice(7):x).slice(0,64)}
+function ip(req){let x=String(req.ip||req.socket.remoteAddress||"unknown").trim();return (x.startsWith("::ffff:")?x.slice(7):x).slice(0,64)}
 function geo(req){const c=String(req.headers["cf-ipcountry"]||req.headers["x-country-code"]||"").toUpperCase(),ok=/^[A-Z]{2}$/.test(c)&&c!=="XX";let name="";if(ok){try{name=new Intl.DisplayNames(["en"],{type:"region"}).of(c)||""}catch{}}return{code:ok?c:"",name,flag:ok?String.fromCodePoint(...[...c].map(x=>127397+x.charCodeAt(0))):"🏳️"}}
 async function log(req,{userId=null,username="unknown",eventType,details={}}){const g=geo(req);await pool.query("INSERT INTO activity_logs(user_id,username,event_type,ip_address,country_code,country_name,user_agent,details) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",[userId,username,eventType,ip(req),g.code,g.name,String(req.headers["user-agent"]||"").slice(0,300),JSON.stringify(details)])}
 const pub=r=>({id:r.id,username:r.username,email:r.email,displayName:r.display_name,bio:r.bio,steamProfileUrl:r.steam_profile_url,role:r.role,createdAt:r.created_at,lastLoginAt:r.last_login_at});
