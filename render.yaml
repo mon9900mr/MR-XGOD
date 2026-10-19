@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: masterxgod-steam-auth
+    name: masterxgod-api
     runtime: node
     plan: free
     rootDir: backend/steam-auth
@@ -11,10 +11,12 @@ services:
       - key: NODE_VERSION
         value: 20
       - key: FRONTEND_URL
-        value: https://mon9900mr.github.io/MR-XGOD/
-      - key: SESSION_SECRET
+        value: https://mon9900mr.github.io/MR-XGOD
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
         generateValue: true
-      - key: TOKEN_SECRET
-        generateValue: true
-      - key: STEAM_API_KEY
+      - key: ADMIN_USERNAME
+        value: MASTERXGOD
+      - key: ADMIN_PASSWORD
         sync: false
