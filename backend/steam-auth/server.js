@@ -13,7 +13,7 @@ const BASE_URL = (process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || "")
 const SESSION_SECRET = process.env.SESSION_SECRET;
 const TOKEN_SECRET = process.env.TOKEN_SECRET || SESSION_SECRET;
 
-if (!BASE_URL || !SESSION_SECRET || SESSION_SECRET.length < 32 || !TOKEN_SECRET || TOKEN_SECRET.length < 32) {
+if (!BASE_URL || !SESSION_SECRET || SESSION_SECRET.length < 32 || !TOKEN_SECRET || TOKEN_SECRET.length < 32 || !process.env.STEAM_API_KEY) {
   console.error("Configure BASE_URL (or use Render's RENDER_EXTERNAL_URL), SESSION_SECRET and TOKEN_SECRET (32+ characters).");
   process.exit(1);
 }
@@ -38,7 +38,7 @@ passport.deserializeUser((user, done) => done(null, user));
 passport.use(new SteamStrategy({
   returnURL: `${BASE_URL}/auth/steam/return`,
   realm: `${BASE_URL}/`,
-  apiKey: process.env.STEAM_API_KEY || undefined
+  apiKey: process.env.STEAM_API_KEY
 }, (identifier, profile, done) => {
   const steamId = String(profile.id || "");
   if (!/^\d{17}$/.test(steamId)) return done(new Error("Invalid SteamID64"));
