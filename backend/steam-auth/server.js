@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import pg from "pg";
 import crypto from "node:crypto";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 import passport from "passport";
 import SteamStrategy from "@dessly/passport-steam";
 const {Pool}=pg, app=express(), PORT=Number(process.env.PORT||10000);
@@ -14,9 +15,10 @@ const PUBLIC_API_URL=(process.env.API_PUBLIC_URL||process.env.RENDER_EXTERNAL_UR
 const JWT_SECRET=process.env.JWT_SECRET||"", DATABASE_URL=process.env.DATABASE_URL||"", ADMIN_STEAM_ID=String(process.env.ADMIN_STEAM_ID||"").trim();
 if(!DATABASE_URL||JWT_SECRET.length<32){console.error("Set DATABASE_URL and JWT_SECRET (32+ chars) in the hosting environment.");process.exit(1)}
 if(ADMIN_STEAM_ID&&!/^\d{17}$/.test(ADMIN_STEAM_ID)){console.error("ADMIN_STEAM_ID must be an exact 17-digit SteamID64.");process.exit(1)}
-const pool=new Pool({connectionString:DATABASE_URL,ssl:process.env.DATABASE_SSL==="false"?false:{rejectUnauthorized:false},max:5});
+const pool=new Pool({connectionString:DATABASE_URL,ssl:process.env.DATABASE_SSL==="false"?false:{rejectUnauthorized:false},max:3});
+const PgSession=connectPgSimple(session);
 app.set("trust proxy",1);app.use(helmet({contentSecurityPolicy:false}));app.use(express.json({limit:"32kb"}));
-app.use(session({name:"mxg.sid",secret:JWT_SECRET,resave:false,saveUninitialized:false,cookie:{httpOnly:true,secure:true,sameSite:"lax",maxAge:10*60*1000}}));
+app.use(session({store:new PgSession({pool,tableName:"user_sessions",createTableIfMissing:true,pruneSessionInterval:900}),name:"mxg.sid",secret:JWT_SECRET,resave:false,saveUninitialized:false,cookie:{httpOnly:true,secure:true,sameSite:"lax",maxAge:10*60*1000}}));
 passport.serializeUser((user,done)=>done(null,user));passport.deserializeUser((user,done)=>done(null,user));
 passport.use("steam",new SteamStrategy({returnUrl:PUBLIC_API_URL?PUBLIC_API_URL+"/auth/steam/return":"https://invalid.example/auth/steam/return",realm:PUBLIC_API_URL?PUBLIC_API_URL+"/":"https://invalid.example/",fetchUserProfile:false},(steamIdentity,done)=>{try{const raw=steamIdentity?.SteamID||steamIdentity;const steamId=String(raw?.getSteamID64?.()??raw?.getSteamId64?.()??raw?.toString?.()??raw);if(!/^\d{17}$/.test(steamId))return done(new Error("Steam did not return a valid SteamID64"));done(null,{steamId})}catch(e){done(e)}}));
 app.use(passport.initialize());app.use(passport.session());
