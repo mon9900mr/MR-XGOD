@@ -1,19 +1,19 @@
-# MASTERXGOD API v2
+# MASTERXGOD API
 
-## Included
-- PostgreSQL-backed registration and login; passwords hashed with bcrypt.
-- Editable display name, bio and Steam profile URL.
-- Admin APIs for account totals, activity totals, distinct IP count, user list, role changes and activity logs.
-- Security logs include IP, user agent, event and timestamp. Country/flag appears only when the hosting proxy supplies a country code; unknown geography is shown as 🏳️, not guessed.
-- Logs older than 30 days are purged at startup; admin can request a purge.
+## Login methods
+- Steam OpenID 2.0 login and automatic account creation (Steam password is entered only on Steam's official website).
+- Optional username/password login remains available.
+- Steam login uses the server-side `@dessly/passport-steam` strategy with profile fetching disabled; a Steam Web API key is not required for identity.
+- PostgreSQL stores users, SteamID64, profiles, roles and 30-day activity logs.
 
 ## Deploy
-1. Create a PostgreSQL database, e.g. https://neon.tech/
-2. Copy the SSL-enabled connection string to Render as DATABASE_URL.
-3. Deploy Blueprint: https://render.com/deploy?repo=https://github.com/mon9900mr/MR-XGOD
-4. In Render Environment set ADMIN_PASSWORD to a unique random password of at least 14 characters. Do not put it in GitHub. Admin username is MASTERXGOD.
-5. Confirm JWT_SECRET is generated. Test https://YOUR-SERVICE.onrender.com/health
-6. Set API_BASE in index.html to your actual Render origin and commit.
+1. Create a PostgreSQL database and copy its SSL-enabled connection string into Render as `DATABASE_URL`.
+2. Deploy the repository's `render.yaml` Blueprint, or create a Node web service with root directory `backend/steam-auth`, build `npm install`, start `npm start`.
+3. Set `DATABASE_URL`, generated `JWT_SECRET` (32+ chars), and `ADMIN_PASSWORD` (14+ chars) in Render. Do not commit secrets.
+4. Steam callback uses Render's `RENDER_EXTERNAL_URL` automatically. Ensure it is the public HTTPS URL of this API.
+5. Set `FRONTEND_URL=https://mon9900mr.github.io` for CORS and `FRONTEND_REDIRECT_URL=https://mon9900mr.github.io/MR-XGOD/` for redirect after Steam login.
+6. Set `API_BASE` in `index.html` to the deployed Render URL and commit the change.
+7. Optional: set `ADMIN_STEAM_ID` to the exact 17-digit SteamID64 that should receive the admin role on Steam login. Never grant admin based only on a public vanity profile URL. Until configured, the existing MASTERXGOD admin password login remains available.
 
 ## Privacy
-The service records IP addresses and user agents for security auditing, with a 30-day retention period. Tell users this in your privacy notice. Free hosts may sleep or throttle. A profile link is metadata, not authentication.
+The service records IP addresses and user agents for security auditing; logs older than 30 days are purged. Tell users this in the site's privacy notice. Free hosts may sleep or throttle.
