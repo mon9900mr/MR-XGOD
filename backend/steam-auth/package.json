@@ -17,6 +17,7 @@
     "pg": "^8.13.1",
     "@dessly/passport-steam": "^3.0.24",
     "express-session": "^1.18.1",
-    "passport": "^0.7.0"
+    "passport": "^0.7.0",
+    "connect-pg-simple": "^10.0.0"
   }
 }
